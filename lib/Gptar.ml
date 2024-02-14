@@ -7,7 +7,7 @@ let tar_link_indicator_offset = 156
 let marshal_header ~sector_size buf t =
   if Cstruct.length buf < sector_size ||
      Cstruct.length buf < gpt_sizeof ||
-     sector_size < Tar.Header.length + 4 then
+     sector_size < Tar.Header.length then
     invalid_arg "Gptar.marshal";
   let file_name =
     (* sector_size in [Gpt.marshal_header] is only used to figure out how much
