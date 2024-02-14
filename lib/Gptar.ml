@@ -9,10 +9,6 @@ let marshal_header ~sector_size buf t =
      Cstruct.length buf < gpt_sizeof ||
      sector_size < Tar.Header.length + 4 then
     invalid_arg "Gptar.marshal";
-  (* Replace the header crc32 with the magic sequence. This is (most likely)
-     not the correct crc32 checksum for that header, but we will fix that
-     later. *)
-  let t = { t with Gpt.header_crc32 = magic_sequence } in
   let file_name =
     (* sector_size in [Gpt.marshal_header] is only used to figure out how much
        of the reserved space to zero out. We use [buf] even if Tar will
@@ -37,19 +33,10 @@ let marshal_header ~sector_size buf t =
      tar file name). The remainder of the tar fields are at least eight bytes
      into the reserved space of the GPT header (which should be all zero, but
      who's checking?). Tar itself has a checksum of its own header which
-     includes the non-reserved part of our GPT header. *)
+     includes the non-reserved part of our GPT header. The GPT header's
+     checksum only covers the first 92 bytes so no need to try to reverse CRC32
+     checksums. *)
   Tar.Header.marshal buf header;
   (* Let's fix up the link indicator so tar utilities like GNU tar will skip
      the unknown type. The 'G' link indicator seems unused. *)
-  Cstruct.set_char buf tar_link_indicator_offset 'G';
-  (* Next, we compute the crc32 of the sector except for the last 4 bytes *)
-  let crc32 =
-    Checkseum.Crc32.digest_bigstring
-      buf.buffer buf.off (buf.len - 4)
-      Checkseum.Crc32.default
-  in
-  (* Since the tar header's checksum covers the GPT header's checksum we can't
-     modify that. However, setting [crc32] at the end of the sector the crc32
-     checksum of the buffer will be [magic_sequence]! This will ensure the the
-     GPT header's checksum also works. *)
-  Cstruct.LE.set_uint32 buf (sector_size - 4) (Optint.to_int32 crc32)
+  Cstruct.set_char buf tar_link_indicator_offset 'G'
