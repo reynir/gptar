@@ -7,6 +7,19 @@ With GPTar you can now create a GPT-formatted disk image which is also a valid t
 Put a partition right after the GPT partition table and you can store your real tar archive data there.
 Create more partitions to store elsewhere on the disk for Full Performance™.
 
+```
+$ fdisk -l disk.img
+Disk disk.img: 512 KiB, 524288 bytes, 1024 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: gpt
+Disk identifier: 54A6B56C-9BBA-4AC9-A8B5-B25EA2F4057C
+
+Device     Start End Sectors Size Type
+disk.img1     34  37       4   2K unknown
+```
+
 Are you somehow unable to mount the disk, but still curious what files are in the tar archive?
 Well, no fret!
 Use standard tar utilities to inspect or extract the contents:
