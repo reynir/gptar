@@ -8,7 +8,7 @@ let () =
   (* We create an empty partition table to figure out what would be the
      first usable LBA. *)
   let empty =
-    Gpt.make ~current_lba:0L ~sector_size ~disk_sectors []
+    Gpt.make ~sector_size ~disk_sectors []
     |> Result.get_ok
   in
   (* Partition names are utf16le encoded *)
@@ -32,7 +32,7 @@ let () =
     |> Result.get_ok
   in
   let gpt =
-    Gpt.make ~current_lba:0L ~sector_size ~disk_sectors [ partition ]
+    Gpt.make ~sector_size ~disk_sectors [ partition ]
     |> Result.get_ok
   in
   let buf = Cstruct.create (sector_size * Int64.to_int disk_sectors) in
@@ -40,7 +40,8 @@ let () =
   Gptar.marshal_header ~sector_size buf gpt;
   (* Then the GPT partition table *)
   Gpt.marshal_partition_table ~sector_size 
-    (Cstruct.shift buf sector_size) gpt;
+    (Cstruct.shift buf (Int64.to_int gpt.partition_entry_lba * sector_size))
+    gpt;
   (* Then we populate the partition with one "test.txt" file *)
   let content = "Hello, World!\n" in
   let tar_hdr = Tar.Header.make "test.txt" (Int64.of_int (String.length content)) in
@@ -49,6 +50,8 @@ let () =
   Tar.Header.marshal (Cstruct.sub partition_buf 0 Tar.Header.length) tar_hdr;
   Cstruct.blit_from_string content 0 partition_buf Tar.Header.length (String.length content);
   (* Finally we copy the GPT+TAR header to the backup location (end of disk) *)
-  Cstruct.blit buf 0 buf (Cstruct.length buf - sector_size) sector_size;
+  Gpt.marshal_header ~sector_size ~primary:false
+    (Cstruct.sub buf (Cstruct.length buf - sector_size) sector_size)
+    gpt;
   output_string oc (Cstruct.to_string buf);
   close_out oc
