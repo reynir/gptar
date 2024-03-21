@@ -1,4 +1,3 @@
 (executable
- (public_name gptar)
  (name main)
  (libraries gptar gpt tar))
