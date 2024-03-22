@@ -1,7 +1,4 @@
-(* https://sar.informatik.hu-berlin.de/research/publications/SAR-PR-2006-05/SAR-PR-2006-05_.pdf *)
-let magic_sequence = 0x2144df1cl
 let gpt_sizeof = 92 (* Gpt.sizeof *)
-let gpt_header_crc32_offset = 16
 let tar_chksum_offset = 148
 let tar_link_indicator_offset = 156
 let gptar_link_indicator = 'G'
