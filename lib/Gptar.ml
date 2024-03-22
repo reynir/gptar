@@ -31,16 +31,17 @@ let marshal_protective_mbrtar buf t =
 
 
 let marshal_header ~sector_size buf (t : Gpt.t) =
-  if Cstruct.length buf < sector_size ||
+  if Cstruct.length buf < 2 * sector_size ||
      Cstruct.length buf < gpt_sizeof ||
-     sector_size < Tar.Header.length then
+     sector_size < Tar.Header.length ||
+     t.partition_entry_lba <> 2L then
     invalid_arg "Gptar.marshal";
   let file_name =
     "GPTAR"
   in
   (* The "file" is the first LBA minus the tar header size plus the GPT header
      (LBA 1) plus the size of the partition table rounded up to [sector_size].
-  *)
+     XXX: we assume the partition table starts right after the GPT header. *)
   let file_size =
     let partition_table_size = 
       Int32.to_int t.num_partition_entries * Int32.to_int t.partition_size
