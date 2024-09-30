@@ -1,7 +1,9 @@
 let gpt_sizeof = 92 (* Gpt.sizeof *)
 let tar_chksum_offset = 148
 let tar_link_indicator_offset = 156
-let gptar_link_indicator = 'G'
+(* 'V' is for volume headers which GNU tar will silently skip when extracting
+   according to https://uni.horse/executable-tarballs.html*)
+let gptar_link_indicator = 'V'
 
 let marshal_protective_mbrtar buf t =
   (* We need to write 0x55, 0xAA at offsets 510-511.
