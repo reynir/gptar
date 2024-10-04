@@ -44,10 +44,16 @@ let () =
     gpt;
   (* Then we populate the partition with one "test.txt" file *)
   let content = "Hello, World!\n" in
-  let tar_hdr = Tar.Header.make "test.txt" (Int64.of_int (String.length content)) in
+  let tar_hdr =
+    Tar.Header.make "test.txt" (Int64.of_int (String.length content))
+      ~file_mode:0o644
+  in
   let partition_buf = Cstruct.shift buf (sector_size * Int64.(to_int partition.starting_lba)) in
-  (* XXX: there seems to be a bug in checksum computation in marshal *)
-  Tar.Header.marshal (Cstruct.sub partition_buf 0 Tar.Header.length) tar_hdr;
+  let () =
+    let b = Bytes.make Tar.Header.length '\000' in
+    Result.get_ok (Tar.Header.marshal b tar_hdr);
+    Cstruct.blit_from_bytes b 0 partition_buf 0 Tar.Header.length
+  in
   Cstruct.blit_from_string content 0 partition_buf Tar.Header.length (String.length content);
   (* Finally we copy the GPT+TAR header to the backup location (end of disk) *)
   Gpt.marshal_header ~sector_size ~primary:false
