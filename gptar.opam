@@ -18,7 +18,7 @@ depends: [
   "ocaml"
   "dune" {>= "3.7"}
   "gpt"
-  "tar"
+  "tar" {>= "3.0.0"}
   "checkseum"
   "odoc" {with-doc}
 ]

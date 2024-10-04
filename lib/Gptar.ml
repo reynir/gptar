@@ -57,7 +57,20 @@ let marshal_header ~sector_size buf (t : Gpt.t) =
      header. ocaml-tar will include the MBR parts when computing the checksum.
   *)
   marshal_protective_mbrtar buf t;
-  Tar.Header.marshal (Cstruct.sub buf 0 Tar.Header.length) header;
+  let () =
+    (* We need to copy the bytes as we depend on [Tar.Header.marshal] leaving
+       unused parts (in our case the MBR header) untouched. *)
+    let b = Cstruct.to_bytes buf ~off:0 ~len:Tar.Header.length in
+    (* [Tar.Header.marshal b header] can be [Error _] if
+       1. [b] is too short,
+       2. [header.file_name] is too long and can't be split,
+       3. [header.link_name] is too long,
+       3. Using fields devmajor, devminor, uname and gname with a compatibility
+          level that doesn't support them
+       None of the above apply to us *)
+    Result.get_ok (Tar.Header.marshal b header);
+    Cstruct.blit_from_bytes b 0 buf 0 Tar.Header.length
+  in
   (* Let's fix up the link indicator so tar utilities like GNU tar will skip
      the unknown type. The 'G' link indicator seems unused. We will need to
      update the tar checksum then. *)
