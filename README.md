@@ -24,17 +24,20 @@ Are you somehow unable to mount the disk, but still curious what files are in th
 Well, no fret!
 Use standard tar utilities to inspect or extract the contents:
 ```
-$ tar -tvf disk.img
-?r-------- 0/0           16896 1970-01-01 01:00 GPTAR unknown file type ‘G’
--r-------- 0/0              14 1970-01-01 01:00 test.txt
+$ tar -tvf disk.img # GNU tar
+Vr-------- 0/0           16896 1970-01-01 01:00 GPTAR--Volume Header--
+-rw-r--r-- 0/0              14 1970-01-01 01:00 test.txt
+$ bsdtar -tvf disk.img # version >= 3.7.5
+-rw-r--r--  0 0      0          14 Jan  1  1970 test.txt
 ```
 
 ## How does this black magic work!?
 
 A GPT formatted disk starts with a so-called "protective" MBR.
 Thankfully, tar headers only use the first few hundreds of bytes which would end up in the MBR bootstrap code if merged into a MBR.
-So the protective MBR is modified to have as bootstrap code a dummy tar header for a file `GPTAR` whose length covers the rest of the first LBA (if block size is greater than 512 bytes), the GPT table header and the partition table entries.
-Then the remaining space can be used as a tar archive, too.
+So the protective MBR is modified to have as bootstrap code a dummy tar header for a GNU volume header `GPTAR` whose length covers the rest of the first LBA (if block size is greater than 512 bytes), the GPT table header and the partition table entries.
+A GNU volume header is not extractable, and in some tar implementations they are silently ignored.
+The remaining space can be used as a tar archive.
 
 ## Why though?!
 
